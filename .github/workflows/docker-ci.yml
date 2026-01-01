@@ -1,4 +1,16 @@
 # .github/workflows/docker-ci.yml
+
+# Update your docker-ci.yml - Change this part:
+- name: Install dependencies
+  run: |
+    # Check if requirements.txt exists
+    if [ -f "requirements.txt" ]; then
+      pip install -r requirements.txt
+    else
+      echo "No requirements.txt, installing default packages"
+      pip install flask pytest
+    fi
+    
 name: Docker CI/CD
 
 on:
