@@ -1,71 +1,33 @@
-name: Docker CI Pipeline
+name: Docker Test
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+on: [push, pull_request]
 
 jobs:
-  build-and-test:
+  test:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
     
-    - name: Create missing files
+    - name: Ensure docker-compose.yml exists
       run: |
-        # Create docker-compose.yml if it doesn't exist
+        # Create if missing
         if [ ! -f "docker-compose.yml" ]; then
-          echo "Creating docker-compose.yml..."
-          cat > docker-compose.yml << 'EOF'
-services:
-  flask-app:
+          echo 'services:
+  web:
     build: .
     ports:
-      - "8080:8000"
-EOF
+      - "8080:8000"' > docker-compose.yml
         fi
         
-        # Create app.py if it doesn't exist
-        if [ ! -f "app.py" ]; then
-          echo "Creating app.py..."
-          cat > app.py << 'EOF'
-from flask import Flask
-app = Flask(__name__)
-
-@app.route('/')
-def hello():
-    return 'Hello from Docker!'
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000, debug=True)
-EOF
-        fi
-        
-        # Show files
-        ls -la
+        # Show it
+        cat docker-compose.yml
     
-    - name: Build and Test
+    - name: Run Docker Compose
       run: |
+        docker compose version
         docker compose build
         docker compose up -d
-        
-        # Wait with retry
-        for i in {1..10}; do
-          if curl -s http://localhost:8080 > /dev/null; then
-            echo "✅ Connected on attempt $i"
-            break
-          fi
-          echo "Attempt $i/10..."
-          sleep 3
-        done
-        
-        # Final test
-        curl -f http://localhost:8080 || {
-          docker compose logs
-          exit 1
-        }
-        
+        sleep 10
+        curl -f http://localhost:8080
         docker compose down
