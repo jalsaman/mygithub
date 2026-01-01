@@ -1,33 +1,55 @@
-name: Docker Test
+name: Docker CI Pipeline
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  test:
+  build-and-test:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
     
-    - name: Ensure docker-compose.yml exists
+    - name: Verify files exist
       run: |
-        # Create if missing
-        if [ ! -f "docker-compose.yml" ]; then
+        echo "=== Checking repository files ==="
+        ls -la
+        echo ""
+        echo "=== Required files ==="
+        [ -f "docker-compose.yml" ] && echo "✅ docker-compose.yml exists" || echo "❌ docker-compose.yml missing"
+        [ -f "Dockerfile" ] && echo "✅ Dockerfile exists" || echo "❌ Dockerfile missing"
+        [ -f "requirements.txt" ] && echo "✅ requirements.txt exists" || echo "❌ requirements.txt missing"
+        [ -f "app.py" ] && echo "✅ app.py exists" || echo "❌ app.py missing"
+    
+    - name: Show docker-compose.yml content
+      if: always()
+      run: |
+        if [ -f "docker-compose.yml" ]; then
+          echo "=== docker-compose.yml content ==="
+          cat docker-compose.yml
+        else
+          echo "Creating docker-compose.yml..."
           echo 'services:
-  web:
+  flask-app:
     build: .
     ports:
       - "8080:8000"' > docker-compose.yml
+          cat docker-compose.yml
         fi
-        
-        # Show it
-        cat docker-compose.yml
     
-    - name: Run Docker Compose
+    - name: Build with Docker Compose
+      run: docker compose build
+    
+    - name: Test Docker Container
       run: |
-        docker compose version
-        docker compose build
         docker compose up -d
-        sleep 10
-        curl -f http://localhost:8080
-        docker compose down
+        sleep 15
+        curl -f http://localhost:8080 || (docker compose logs && exit 1)
+    
+    - name: Cleanup
+      if: always()
+      run: docker compose down -v
