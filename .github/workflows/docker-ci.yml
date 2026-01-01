@@ -2,39 +2,32 @@ name: Docker CI Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Create docker-compose.yml if missing
-      run: |
-        if [ ! -f "docker-compose.yml" ]; then
-          cat << 'EOF' > docker-compose.yml
-services:
-  flask-app:
-    build: .
-    ports:
-      - "8080:8000"
-EOF
-        fi
-    
-    - name: Build with Docker Compose
-      run: docker compose build
-    
-    - name: Test Docker Container
-      run: |
-        docker compose up -d
-        sleep 15
-        curl -f http://localhost:8080 || (docker compose logs && exit 1)
-    
-    - name: Cleanup
-      if: always()
-      run: docker compose down -v
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Verify files
+        run: |
+          echo "Checking files..."
+          ls -la
+      
+      - name: Build with Docker Compose
+        run: docker compose build
+      
+      - name: Test Docker Container
+        run: |
+          docker compose up -d
+          sleep 15
+          curl -f http://localhost:8080 || (docker compose logs && exit 1)
+      
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v
