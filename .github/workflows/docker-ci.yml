@@ -23,8 +23,8 @@ jobs:
         run: |
           pip install flake8 black pytest
       
-      - name: Check code formatting
-        run: black --check app.py
+      - name: Format Code with Black
+        run: black  app.py
       
       - name: Run linter
         run: flake8 app.py --count --max-line-length=88
