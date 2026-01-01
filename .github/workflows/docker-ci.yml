@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: Enhanced CI Pipeline
 
 on:
   push:
@@ -7,17 +7,34 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  lint-and-test:
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      
+      - name: Install Python dependencies
+        run: |
+          pip install flake8 black pytest
+      
+      - name: Check code formatting
+        run: black --check app.py
+      
+      - name: Run linter
+        run: flake8 app.py --count --max-line-length=88
+      
       - name: Build Docker image
         run: docker compose build
       
-      - name: Test the application
+      - name: Test application
         run: |
           docker compose up -d
-          sleep 10
+          sleep 15
+          curl -f http://localhost:8080
+          docker compose down
