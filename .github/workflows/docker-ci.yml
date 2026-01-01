@@ -1,16 +1,3 @@
-# .github/workflows/docker-ci.yml
-
-# Update your docker-ci.yml - Change this part:
-- name: Install dependencies
-  run: |
-    # Check if requirements.txt exists
-    if [ -f "requirements.txt" ]; then
-      pip install -r requirements.txt
-    else
-      echo "No requirements.txt, installing default packages"
-      pip install flask pytest
-    fi
-    
 name: Docker CI/CD
 
 on:
@@ -34,7 +21,13 @@ jobs:
     
     - name: Install dependencies
       run: |
-        pip install -r requirements.txt
+        # Check if requirements.txt exists
+        if [ -f "requirements.txt" ]; then
+          pip install -r requirements.txt
+        else
+          echo "No requirements.txt, installing default packages"
+          pip install flask pytest
+        fi
     
     - name: Run tests
       run: |
@@ -63,5 +56,8 @@ jobs:
         # Check if container is running
         docker ps | grep myapp-test
         
-        # Test the app (optional - if you want HTTP test)
-        # curl -f http://localhost:8000/ ||
+        # Clean up
+        docker stop myapp-test
+        docker rm myapp-test
+        
+        echo "✅ Docker build and test successful!"
