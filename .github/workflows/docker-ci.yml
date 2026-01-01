@@ -1,0 +1,55 @@
+# .github/workflows/docker-ci.yml
+name: Docker CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Job 1: Run tests (from Phase 1)
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+    
+    - name: Run tests
+      run: |
+        python -m pytest tests/ -v
+
+  # Job 2: Build and test Docker image (NEW - Phase 2)
+  docker:
+    needs: test  # Wait for tests to pass first
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Build Docker image
+      run: |
+        docker build -t myapp:latest .
+    
+    - name: Test Docker container
+      run: |
+        # Run container in background
+        docker run -d --name myapp-test -p 8000:8000 myapp:latest
+        
+        # Wait for app to start
+        sleep 5
+        
+        # Check if container is running
+        docker ps | grep myapp-test
+        
+        # Test the app (optional - if you want HTTP test)
+        # curl -f http://localhost:8000/ ||
