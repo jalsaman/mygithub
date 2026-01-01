@@ -14,26 +14,29 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Install Docker Compose
+    - name: Set up Docker
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Verify Docker Compose
       run: |
-        sudo apt-get update
-        sudo apt-get install -y docker-compose
-        docker-compose --version
+        # GitHub Actions runners have Docker Compose v2 pre-installed
+        docker --version
+        docker compose version  # This is v2 (with space)
     
     - name: Build with Docker Compose
-      run: docker-compose build
+      run: docker compose build
     
     - name: Test Docker Container
       run: |
         # Start the container
-        docker-compose up -d
+        docker compose up -d
         
         # Wait for Flask to start
         echo "Waiting for Flask app to start..."
         sleep 15
         
         # Test the application
-        STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080)
+        STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080 2>/dev/null || echo "000")
         if [ "$STATUS" -eq 200 ]; then
           echo "✅ Application is running! HTTP Status: $STATUS"
           echo "Response:"
@@ -41,10 +44,10 @@ jobs:
         else
           echo "❌ Application failed to start. HTTP Status: $STATUS"
           echo "=== Docker Compose Logs ==="
-          docker-compose logs
+          docker compose logs
           exit 1
         fi
     
     - name: Cleanup
       if: always()
-      run: docker-compose down -v
+      run: docker compose down -v
