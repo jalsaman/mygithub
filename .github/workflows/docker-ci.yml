@@ -14,31 +14,16 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Verify files exist
+    - name: Create docker-compose.yml if missing
       run: |
-        echo "=== Checking repository files ==="
-        ls -la
-        echo ""
-        echo "=== Required files ==="
-        [ -f "docker-compose.yml" ] && echo "✅ docker-compose.yml exists" || echo "❌ docker-compose.yml missing"
-        [ -f "Dockerfile" ] && echo "✅ Dockerfile exists" || echo "❌ Dockerfile missing"
-        [ -f "requirements.txt" ] && echo "✅ requirements.txt exists" || echo "❌ requirements.txt missing"
-        [ -f "app.py" ] && echo "✅ app.py exists" || echo "❌ app.py missing"
-    
-    - name: Show docker-compose.yml content
-      if: always()
-      run: |
-        if [ -f "docker-compose.yml" ]; then
-          echo "=== docker-compose.yml content ==="
-          cat docker-compose.yml
-        else
-          echo "Creating docker-compose.yml..."
-          echo 'services:
+        if [ ! -f "docker-compose.yml" ]; then
+          cat << 'EOF' > docker-compose.yml
+services:
   flask-app:
     build: .
     ports:
-      - "8080:8000"' > docker-compose.yml
-          cat docker-compose.yml
+      - "8080:8000"
+EOF
         fi
     
     - name: Build with Docker Compose
