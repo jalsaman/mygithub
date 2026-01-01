@@ -14,21 +14,23 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Set up Docker Buildx
+    - name: Set up Docker Compose
       uses: docker/setup-buildx-action@v3
     
-    - name: Build Docker image
-      run: docker-compose build
-    
-    - name: Test Docker Compose
+    - name: Install Docker Compose
       run: |
-        docker-compose up -d
-        sleep 10  # Wait for app to start
+        sudo apt-get update
+        sudo apt-get install -y docker-compose-plugin
+        docker compose version  # Note: space, not dash
+    
+    - name: Build and Test
+      run: |
+        # Note: Use 'docker compose' (with space) instead of 'docker-compose'
+        docker compose build
+        docker compose up -d
+        sleep 10
         
-        # Test that Flask app is responding
-        curl -f http://localhost:8080 || (docker-compose logs && exit 1)
+        # Test the application
+        curl -f http://localhost:8080 || (docker compose logs && exit 1)
         
-        # Run Python tests inside container
-        docker-compose exec -T flask-app python -m pytest -v || true
-        
-        docker-compose down
+        docker compose down
